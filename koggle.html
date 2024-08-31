@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaggle API Interaction</title>
+</head>
+<body>
+    <h2>Download Kaggle Dataset</h2>
+
+    <!-- Upload kaggle.json API Key -->
+    <label for="kaggleApiKey">Upload Kaggle API Key (kaggle.json): </label>
+    <input type="file" id="kaggleApiKey" accept=".json">
+    <br><br>
+
+    <!-- Input for Dataset Details -->
+    <label for="datasetUrl">Enter Kaggle Dataset URL: </label>
+    <input type="text" id="datasetUrl" placeholder="e.g., username/dataset-name">
+    <br><br>
+
+    <!-- Button to download dataset -->
+    <button onclick="downloadDataset()">Download Dataset</button>
+    <br><br>
+
+    <script>
+        let apiKey;
+
+        // Load the Kaggle API Key from kaggle.json
+        document.getElementById('kaggleApiKey').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                try {
+                    apiKey = JSON.parse(event.target.result);
+                    alert('API Key Loaded Successfully!');
+                } catch (error) {
+                    alert('Invalid JSON file. Please upload a valid kaggle.json file.');
+                }
+            };
+
+            reader.readAsText(file);
+        });
+
+        // Function to download the dataset using Kaggle API
+        async function downloadDataset() {
+            const datasetUrl = document.getElementById('datasetUrl').value;
+
+            if (!apiKey) {
+                alert('Please upload your Kaggle API Key first.');
+                return;
+            }
+
+            if (!datasetUrl) {
+                alert('Please enter the Kaggle dataset URL.');
+                return;
+            }
+
+            const [username, datasetName] = datasetUrl.split('/');
+
+            try {
+                const response = await fetch(`https://www.kaggle.com/api/v1/datasets/download/${username}/${datasetName}`, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey.api_key}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to download dataset. Status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+
+                // Create a download link for the dataset
+                const downloadLink = document.createElement('a');
+                downloadLink.href = downloadUrl;
+                downloadLink.download = `${datasetName}.zip`;
+                downloadLink.click();
+
+                alert('Dataset downloaded successfully!');
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
